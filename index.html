@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Fits the Bill</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a top-down rec room. Round wooden tables ringed by six chairs are the whole interface;
+   sitting down swaps the room for one big table with your cards beside it. */
+:root{
+  --floor:#dfe8dc; --floor-2:#d2dece; --panel:#f2f6f0; --line:#b4c4b8;
+  --ink:#1b2a23; --muted:#56685e;
+  --wood:#cf9658; --wood-edge:#a87238; --wood-ink:#3d2710;
+  --bill:#1d5f8c; --bill-ink:#ffffff;
+  --paper:#fffcf3; --paper-ink:#1b2a23; --paper-edge:#d9cfb6;
+  --accent:#d9861c; --accent-ink:#2b1a02;
+  --seat:#f7f9f5; --seat-taken:#bfd3c5; --seat-bot:#e3dccb;
+  --win:#2f8f5b;
+  --display:"Bagel Fat One","Arial Black",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --floor:#14211b; --floor-2:#192a22; --panel:#1c2d25; --line:#365043;
+    --ink:#e7efe9; --muted:#9db2a6;
+    --wood:#7d5631; --wood-edge:#5a3b1e; --wood-ink:#f6e6d0;
+    --bill:#2c7fb6; --bill-ink:#ffffff;
+    --paper:#f3eddd; --paper-ink:#1b2a23; --paper-edge:#b9ad90;
+    --accent:#f0a33c; --accent-ink:#2b1a02;
+    --seat:#22362c; --seat-taken:#3f6350; --seat-bot:#4a4534;
+    --win:#56c48a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --floor:#14211b; --floor-2:#192a22; --panel:#1c2d25; --line:#365043;
+  --ink:#e7efe9; --muted:#9db2a6;
+  --wood:#7d5631; --wood-edge:#5a3b1e; --wood-ink:#f6e6d0;
+  --bill:#2c7fb6; --bill-ink:#ffffff;
+  --paper:#f3eddd; --paper-ink:#1b2a23; --paper-edge:#b9ad90;
+  --accent:#f0a33c; --accent-ink:#2b1a02;
+  --seat:#22362c; --seat-taken:#3f6350; --seat-bot:#4a4534;
+  --win:#56c48a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--floor);
+  background-image:linear-gradient(45deg,var(--floor-2) 25%,transparent 25%,transparent 75%,var(--floor-2) 75%),linear-gradient(45deg,var(--floor-2) 25%,transparent 25%,transparent 75%,var(--floor-2) 75%);
+  background-size:56px 56px; background-position:0 0,28px 28px;
+  color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.45;
+}
+.wrap{max-width:1040px; margin-inline:auto; padding-inline:16px; padding-block:20px 48px; display:flex; flex-direction:column; gap:22px}
+button,input{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+
+.mast{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:14px 24px}
+.mast h1{font-family:var(--display); font-weight:400; font-size:clamp(2.1rem,7vw,3.4rem); line-height:.95; margin:0; letter-spacing:.01em}
+.mast p{margin:6px 0 0; color:var(--muted); font-weight:500}
+.who{display:flex; flex-direction:column; gap:4px; min-width:0}
+.who label{font-size:.72rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.who input{background:var(--panel); border:2px solid var(--line); border-radius:8px; padding:8px 10px; width:11.5rem; max-width:100%; font-weight:600}
+.chip{align-self:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.85rem; font-weight:600; color:var(--muted)}
+.chip b{color:var(--ink)}
+
+h2{font-family:var(--display); font-weight:400; font-size:1.5rem; margin:0; text-wrap:balance}
+.room{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:26px 20px}
+.spot{display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0}
+.spot .tbl{max-width:290px}
+.spot small{color:var(--muted); font-weight:600; text-align:center}
+.link{background:none; border:0; padding:2px 4px; color:var(--muted); font-weight:700; font-size:.85rem; text-decoration:underline; cursor:pointer}
+
+.tbl{position:relative; width:100%; aspect-ratio:1; max-width:100%}
+.top{position:absolute; inset:24%; border-radius:50%; background:var(--wood); border:5px solid var(--wood-edge); color:var(--wood-ink);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6%; gap:2px}
+.top .tname{font-family:var(--display); font-size:1.05rem; line-height:1.05}
+.top .tstat{font-size:.78rem; font-weight:700; opacity:.85}
+.chair{position:absolute; left:var(--x); top:var(--y); width:21%; aspect-ratio:1; transform:translate(-50%,-50%) rotate(var(--rot));
+  border-radius:26%; border:2px solid var(--line); border-top-width:7px; background:var(--seat); color:var(--ink);
+  display:flex; align-items:center; justify-content:center; padding:0; margin:0}
+button.chair{cursor:pointer; border-style:dashed; border-top-style:solid}
+button.chair:hover:not(:disabled){background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+button.chair:disabled{cursor:default; opacity:.55}
+.chair > span{transform:rotate(calc(var(--rot) * -1)); display:flex; flex-direction:column; align-items:center; line-height:1.1; font-weight:700; font-size:.78rem; text-align:center; overflow-wrap:anywhere; max-width:120%}
+.chair.taken{background:var(--seat-taken); border-color:var(--wood-edge)}
+.chair.bot{background:var(--seat-bot); border-color:var(--wood-edge); border-style:solid}
+.chair.me{background:var(--accent); color:var(--accent-ink); border-color:var(--accent-ink)}
+.chair .pts{font-size:.7rem; font-weight:700; opacity:.85; font-variant-numeric:tabular-nums}
+.chair .tag{font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; background:var(--bill); color:var(--bill-ink); border-radius:4px; padding:1px 4px; margin-top:2px}
+
+.play{display:grid; grid-template-columns:minmax(0,430px) minmax(0,1fr); gap:28px; align-items:start}
+@media (max-width:780px){ .play{grid-template-columns:minmax(0,1fr)} .play .tbl{max-width:430px; margin-inline:auto} }
+.play .top{padding:4%}
+.side{display:flex; flex-direction:column; gap:16px; min-width:0}
+.box{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; min-width:0}
+.box p{margin:0}
+.say{font-size:1.1rem; font-weight:600; text-wrap:balance}
+.hint{color:var(--muted); font-size:.9rem; font-weight:500}
+.lbl{font-size:.72rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(118px,1fr)); gap:10px}
+.card{background:var(--paper); color:var(--paper-ink); border:2px solid var(--paper-edge); border-radius:10px; min-height:92px; padding:10px;
+  display:flex; flex-direction:column; justify-content:space-between; gap:6px; text-align:left; font-weight:600; font-size:.95rem; line-height:1.2; overflow-wrap:anywhere}
+button.card{cursor:pointer}
+button.card:hover{border-color:var(--accent)}
+.card.sel{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent); transform:translateY(-3px)}
+.card.won{border-color:var(--win); box-shadow:0 0 0 3px var(--win)}
+.card .by{font-size:.72rem; font-weight:700; opacity:.7}
+.card.down{background:repeating-linear-gradient(135deg,var(--paper) 0 8px,var(--paper-edge) 8px 10px); min-height:64px}
+.bill{background:var(--bill); color:var(--bill-ink); border-radius:10px; padding:8px 10px; width:100%; display:flex; flex-direction:column; align-items:center; gap:2px}
+.bill .lbl{color:var(--bill-ink); opacity:.8; font-size:.62rem}
+.bill strong{font-family:var(--display); font-weight:400; font-size:clamp(1rem,4.2vw,1.45rem); line-height:1.05; overflow-wrap:anywhere}
+.btn{background:var(--accent); color:var(--accent-ink); border:0; border-radius:10px; padding:11px 18px; font-weight:700; cursor:pointer; align-self:flex-start}
+.btn:disabled{opacity:.45; cursor:default}
+.row{display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center}
+ol.rules{margin:0; padding-left:1.2rem; display:flex; flex-direction:column; gap:6px; max-width:62ch}
+@media (prefers-reduced-motion:no-preference){ .card{transition:transform .12s, box-shadow .12s} }
+.order{background:var(--bill); color:var(--bill-ink); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:4px}
+.order .lbl{color:var(--bill-ink); opacity:.8}
+.order strong{font-family:var(--display); font-weight:400; font-size:clamp(1.25rem,4.6vw,1.7rem); line-height:1.1; text-wrap:balance}
+.card.own{opacity:.6; border-style:dashed}
+.wide{flex:1 1 16rem; min-width:0; background:var(--paper); color:var(--paper-ink); border:2px solid var(--line); border-radius:8px; padding:9px 10px}
+.chip{overflow-wrap:anywhere}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <h1>Fits the Bill</h1>
+      <p>Pull up a chair. Serve your best card. Collect the tips.</p>
+    </div>
+    <div class="who">
+      <label for="nick">Name on your chair</label>
+      <input id="nick" maxlength="10" autocomplete="off" placeholder="Your name">
+    </div>
+  </header>
+  <div class="chip" id="chip" role="status">Opening the room…</div>
+  <main id="app"></main>
+</div>
+
+<script>
+/* Paste your Apps Script web app URL between the quotes to give everyone one shared room. */
+const ROOM_URL = 'https://script.google.com/macros/s/AKfycbzf3QuB_oZyepfD-xUxc9vAGs7ateg5FQcPQy0itZdAZjDGdQ03qM1ViK0uBNNO9-4D/exec';
+const ROUNDS = 8, HAND = 7, MIN_SEATED = 3;
+const SEATS = ['s0','s1','s2','s3','s4','s5'];
+const TABLES = [
+  {id:'t1', name:'Window Table'}, {id:'t2', name:'Corner Table'},
+  {id:'t3', name:'Kitchen Table'}, {id:'t4', name:'Back Table'}
+];
+const BOT_NAMES = ['Mabel','Otis','Dot','Gus','Pearl','Walt'];
+const ORDERS = `Something you'd hide before company comes over|The best thing to find in a coat pocket|A terrible thing to bring to a job interview|What you'd want with you on a desert island|The real reason the meeting ran late|Something that gets better with age|A gift that says "I forgot your birthday"|What the dog is actually thinking about|The worst thing to hear at 3 a.m.|Something every town needs one more of|What you'd put in a time capsule|A surprisingly good band name|The secret to a long and happy life|Something that should come with a warning label|What's really at the bottom of the lake|The best excuse for being late|Something you'd name a boat after|A bad thing to step on barefoot|What you'd save first in a flood|The hero this town deserves|Something that would make a great school mascot|What the museum of the future will display|The worst thing to run out of|Something you can't explain to a five-year-old|A strange thing to be afraid of|What makes a Monday bearable|The first thing visitors from space should see|Something that belongs on a postage stamp|A thing you'd pay good money to avoid|What a wizard would keep in the garage|The most useful thing in an emergency|Something that's louder than it has any right to be|A perfect title for your memoir|What you'd find in a pirate's lunchbox|The next big sporting event|Something a cat would knock off the table on purpose|A thing that instantly ruins a nap|What grandparents know that nobody else does|The best part of a long car ride|Something that deserves a parade|A weird thing to collect|What you'd teach a robot first|The worst possible wedding gift|Something that smells like childhood|A reason to cancel school|What's keeping the mayor up at night|The thing you'd miss most on the moon|Something that always shows up uninvited|A sign you're officially a grown-up|What the scarecrow dreams about|The best thing to share with a neighbor|Something you'd find in a superhero's junk drawer|A thing that's impossible to do quietly|What you'd bring to show-and-tell today|The true cause of the traffic jam|Something worth waking up early for|A thing nobody admits they enjoy|What should replace the handshake|The winner of the county fair, somehow|Something that would make winter shorter`.split('|');
+const THINGS = `A snow day|Grandma's basement|Friday night fish fry|A squeaky cheese curd|The first violin lesson|A porch swing|Leftover casserole|The junk drawer|A garage sale|Mittens on a string|The last slice of pizza|A marching band|Static cling|A barn cat|The school bus in January|A potluck dessert table|Untangling Christmas lights|A canoe with a slow leak|The neighbor's lawn mower at 7 a.m.|A library card|Wet socks|A thermos of hot cocoa|The middle seat|A tuba solo|Bubble wrap|A mystery key|The dentist's waiting room|A homemade birthday card|Potholes|A county fair ribbon|The smell of a new book|A flat bicycle tire|Road trip snacks|A rubber chicken|The remote control|A pile of raked leaves|Recess|A paper route|The good scissors|A lost mitten|Fresh sweet corn|A fire drill|The world's largest ball of twine|A hand-me-down coat|Ice fishing|A bowl of cold oatmeal|The family group text|A treehouse|Dandelions|A talent show|The office microwave|A snowblower that won't start|Sunday pancakes|A substitute teacher|The backup alarm on a truck|A jar of pickles|Summer camp|A wobbly restaurant table|The wave at a ballgame|A pet goldfish|Thank-you notes|A lighthouse|The check engine light|A bowling trophy|Homework on a Sunday night|A kite stuck in a tree|The sound of a zipper|A lemonade stand|Mosquitoes|A handwritten recipe|The top bunk|A parade float|Burnt toast|A bird feeder|The waiting list|A sled hill|Group projects|A cuckoo clock|The spelling bee|A hammock|Expired coupons|A covered bridge|The self-checkout|A music stand that keeps collapsing|Fog|A phone at one percent|The cookie jar|A scarecrow|Tax season|A row of mailboxes|The quiet car on the train|A science fair volcano|Hiccups|A rocking chair|The lost and found|A thunderstorm|Dress shoes|A wind-up toy|The express lane|A tractor on the highway|Glitter|A snow fort|The deep end of the pool|A whoopee cushion|Daylight saving time|A firefly in a jar|The dog's dinner bowl|A ukulele|Black ice|A bake sale|The attic|A crossword puzzle|Moving day|A corn maze|The smoke detector chirp|A trombone slide|Loose change|A picnic in the wind|The orchestra tuning up|A pogo stick|Spare buttons|A voicemail from Mom|The back of the closet|A hot air balloon|Tangled earbuds|A roadside vegetable stand|The birthday candles|A stuck jar lid|Jury duty|A snow globe|The cereal aisle|A campfire story|Paper cuts|A vending machine|The practice chart on the fridge|A woodpecker|Car keys|A rainy recess|The very last day of school|A turtle crossing the road|Elevator music|A quilt|The bottom of a backpack|A baby's laugh|Wet paint|A weather vane|The class group photo|A rosin cake|Sawdust|A ferris wheel|The dishwasher debate|A walkie-talkie|Mud season|A foghorn|The cousins' table|A metronome|Freezer burn|A bow tie|The waiting room fish tank|A lawn gnome|Overdue library books|A choir of third graders|The first tomato of summer|A squeaky shopping cart|Duct tape|A carousel|The emergency chocolate|A frozen windshield|Folding chairs|A campsite at dawn|The slow cooker|A paper airplane|Goosebumps|A sock puppet|The trampoline|A long goodbye in the driveway|Leaf blowers|A canoe paddle|The fair's cream puff line|A spare tire|Yard flamingos|A pocket full of acorns|The backup plan|A standing ovation|Sunburn|A milk mustache|The Sunday crossword|A grandfather clock|Stage fright|A penny on the sidewalk`.split('|');
+
+/* ---------- small helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hash(str){ let h = 2166136261; str = String(str); for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const permCache = {};
+function perm(n, seed){
+  const k = n + ':' + seed; if (permCache[k]) return permCache[k];
+  const a = Array.from({length:n}, (_, i) => i), r = rng(hash(seed));
+  for (let i = n - 1; i > 0; i--){ const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return permCache[k] = a;
+}
+function merge(a, b){
+  const out = {}; for (const k in a) out[k] = a[k];
+  for (const k in b){
+    const v = b[k], o = out[k];
+    out[k] = (v && typeof v === 'object' && !Array.isArray(v)) ? merge((o && typeof o === 'object' && !Array.isArray(o)) ? o : {}, v) : v;
+  }
+  return out;
+}
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+
+/* ---------- state ---------- */
+const EMPTY = {uid:null, name:null, bot:false};
+let mode = 'connecting';            // connecting | live | local
+let localWhy = '';
+let db = null, unsub = null;
+let gasUrl = '', writing = 0, lastWrite = 0, netErr = false;
+const HOSTED = !(window.claude && window.claude.use);
+const ROOM_RE = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
+let myId = lsGet('ftb-id') || ('p-' + Math.random().toString(36).slice(2, 10));
+lsSet('ftb-id', myId);
+const docs = {}; TABLES.forEach(t => docs[t.id] = null);
+let sel = null, selKey = '', confirming = '';
+const chains = {}, scheduled = new Set();
+
+function freshDoc(){
+  const seats = {}, hands = {}, ptr = {};
+  SEATS.forEach(s => { seats[s] = {...EMPTY}; hands[s] = []; ptr[s] = 0; });
+  return {seed: Math.floor(Math.random() * 1e9), game:1, round:0, seats, hands, ptr, subs:{}, votes:{}, rosters:{}};
+}
+/* Each chair draws from its own sixth of the shuffled deck, so two players never hold the same card. */
+function draw(d, seat, n, hand){
+  const i = SEATS.indexOf(seat), p = perm(THINGS.length, 'things' + d.seed).filter((_, k) => k % 6 === i);
+  let at = (d.ptr && d.ptr[seat]) || 0; const out = hand.slice(); let guard = 0;
+  while (out.length < hand.length + n && guard++ < p.length * 2){ const c = p[at % p.length]; at++; if (!out.includes(c)) out.push(c); }
+  return {hand: out, ptr: at};
+}
+/* One round's tips: a tip per vote, and whoever backed the top card earns one more. */
+function tally(d, key){
+  const subs = (d.subs && d.subs[key]) || {}, votes = (d.votes && d.votes[key]) || {}, tips = {};
+  for (const s in votes) if (votes[s] && subs[votes[s].to]) tips[votes[s].to] = (tips[votes[s].to] || 0) + 1;
+  const max = Math.max(0, ...Object.values(tips));
+  const top = max ? Object.keys(tips).filter(s => tips[s] === max) : [];
+  const sharp = Object.keys(votes).filter(s => votes[s] && top.includes(votes[s].to));
+  return {subs, votes, tips, top, sharp};
+}
+function derive(d){
+  const key = 'g' + d.game + 'r' + d.round;
+  const seat = s => (d.seats && d.seats[s]) || EMPTY;
+  const seated = SEATS.filter(s => seat(s).uid);
+  const roster = (d.rosters && d.rosters[key]) || [];
+  const players = roster.filter(s => seat(s).uid);
+  const subs = (d.subs && d.subs[key]) || {}, votes = (d.votes && d.votes[key]) || {};
+  const played = roster.filter(s => subs[s]).sort((a, b) => hash(d.seed + key + a) - hash(d.seed + key + b));
+  const pending = players.filter(s => !subs[s]);
+  const unvoted = players.filter(s => !votes[s] && played.some(p => p !== s));
+  const done = d.round > 0 && played.length >= 2 && !pending.length && !unvoted.length;
+  const phase = !d.round ? 'lobby' : done ? 'result' : players.length < MIN_SEATED ? 'stalled' : pending.length ? 'picking' : 'voting';
+  const scores = {}, names = {};
+  for (let r = 1; r <= d.round; r++){
+    if (r === d.round && phase !== 'result') break;
+    const t = tally(d, 'g' + d.game + 'r' + r);
+    for (const s in t.subs) if (t.subs[s]){ const p = t.subs[s].pid; names[p] = t.subs[s].name; scores[p] = (scores[p] || 0) + (t.tips[s] || 0); }
+    t.sharp.forEach(s => { const p = t.votes[s].pid; scores[p] = (scores[p] || 0) + 1; });
+  }
+  const order = d.round ? ORDERS[perm(ORDERS.length, 'orders' + d.seed + d.game)[(d.round - 1) % ORDERS.length]] : '';
+  return {key, seat, seated, roster, players, subs, votes, played, pending, unvoted, phase, scores, names, order, over: phase === 'result' && d.round >= ROUNDS};
+}
+function findMe(){
+  for (const t of TABLES){ const d = docs[t.id]; if (!d || !d.seats) continue; for (const s of SEATS) if (d.seats[s] && d.seats[s].uid === myId) return {tid:t.id, seat:s}; }
+  return null;
+}
+const nick = () => ($('nick').value.trim() || 'Guest').slice(0, 10);
+
+/* ---------- writes: one at a time per table, merge patches ---------- */
+function write(tid, patch, replace){
+  chains[tid] = (chains[tid] || Promise.resolve()).then(() => doWrite(tid, patch, replace)).catch(() => {});
+  return chains[tid];
+}
+async function doWrite(tid, patch, replace, retried){
+  if (mode !== 'live'){ docs[tid] = replace ? patch : merge(docs[tid] || freshDoc(), patch); render(); return; }
+  if (gasUrl) return gasWrite(tid, patch, replace);
+  const ref = db.doc('tables/' + tid);
+  try { if (replace) await ref.set(patch); else await ref.update(patch); }
+  catch (e){
+    if (e && e.code === 'unavailable' && !retried){ await new Promise(r => setTimeout(r, 400 + Math.random() * 600)); return doWrite(tid, patch, replace, true); }
+    goLocal(e && e.code === 'quota_exceeded' ? 'The shared room is full, so this is a practice room on your device.' : 'The shared room is not writable from here, so this is a practice room on your device.');
+    return doWrite(tid, patch, replace, true);
+  }
+}
+/* ---------- shared room on Google Apps Script (used when the page is hosted outside Claude) ---------- */
+async function gas(body){
+  const r = await fetch(body ? gasUrl : gasUrl + '?t=' + Date.now(), body ? {method:'POST', body:JSON.stringify(body)} : undefined);
+  const j = await r.json(); if (!j || !j.ok) throw new Error('room'); return j;
+}
+function applyTables(tables){
+  const before = JSON.stringify(docs);
+  TABLES.forEach(t => { docs[t.id] = (tables && tables[t.id]) || null; });
+  if (JSON.stringify(docs) !== before) render();
+}
+async function gasWrite(tid, patch, replace){
+  docs[tid] = replace ? patch : merge(docs[tid] || freshDoc(), patch); render();
+  writing++;
+  try {
+    for (let n = 0; n < 2; n++){
+      try { const r = await gas({a:'write', tid, patch, replace:!!replace}); lastWrite = Date.now(); netErr = false; applyTables(r.tables); return; }
+      catch (e){ netErr = true; await new Promise(r => setTimeout(r, 800)); }
+    }
+  } finally { writing--; lastWrite = Date.now(); render(); }
+}
+async function poll(){
+  if (mode === 'live' && gasUrl && !document.hidden && !writing){
+    const t0 = Date.now();
+    try { const r = await gas(); if (!writing && lastWrite < t0) applyTables(r.tables); if (netErr){ netErr = false; render(); } }
+    catch (e){ if (!netErr){ netErr = true; render(); } }
+  }
+  setTimeout(poll, 2000);
+}
+function inviteLink(){ return location.origin + location.pathname + (ROOM_URL ? '' : '?room=' + encodeURIComponent(gasUrl)); }
+function goLocal(why){
+  if (mode === 'local') return;
+  mode = 'local'; localWhy = why || '';
+  if (unsub){ try { unsub(); } catch (e) {} unsub = null; }
+  TABLES.forEach(t => { docs[t.id] = docs[t.id] ? JSON.parse(JSON.stringify(docs[t.id])) : null; });
+  render();
+}
+
+/* ---------- actions ---------- */
+function seatPatch(d, seat, who){
+  const dr = draw(d, seat, HAND, []);
+  return {seats:{[seat]:who}, hands:{[seat]:dr.hand}, ptr:{[seat]:dr.ptr}};
+}
+function sit(tid, seat){
+  const exists = !!docs[tid], d = docs[tid] || freshDoc();
+  if (d.seats[seat] && d.seats[seat].uid) return;
+  const patch = seatPatch(d, seat, {uid:myId, name:nick(), bot:false});
+  write(tid, exists ? patch : merge(d, patch), !exists);
+}
+function addBot(tid, seat){
+  const d = docs[tid]; if (!d || d.seats[seat].uid) return;
+  const used = SEATS.map(s => d.seats[s].name), name = BOT_NAMES.find(n => !used.includes(n)) || 'Guest';
+  write(tid, seatPatch(d, seat, {uid:'bot-' + Math.random().toString(36).slice(2, 8), name, bot:true}));
+}
+const stand = (tid, seat) => write(tid, {seats:{[seat]:{...EMPTY}}});
+function nextRound(tid){
+  const d = docs[tid], st = derive(d); if (st.seated.length < MIN_SEATED) return;
+  const r = d.round + 1;
+  write(tid, {round:r, rosters:{['g' + d.game + 'r' + r]:st.seated}});
+}
+function playCard(tid, seat, card){
+  const d = docs[tid], st = derive(d); if (st.phase !== 'picking' || st.subs[seat] || !st.players.includes(seat)) return;
+  const who = st.seat(seat), hand = (d.hands[seat] || []).filter(c => c !== card), dr = draw(d, seat, 1, hand);
+  write(tid, {subs:{[st.key]:{[seat]:{c:card, pid:who.uid, name:who.name}}}, hands:{[seat]:dr.hand}, ptr:{[seat]:dr.ptr}});
+}
+function tip(tid, seat, to){
+  const d = docs[tid], st = derive(d); if (st.phase !== 'voting' || st.votes[seat] || to === seat || !st.subs[to]) return;
+  write(tid, {votes:{[st.key]:{[seat]:{to, pid:st.seat(seat).uid}}}});
+}
+function resetTable(tid, keepMe){
+  let d = freshDoc();
+  if (keepMe){ const me = findMe(); if (me && me.tid === tid) d = merge(d, seatPatch(d, me.seat, {uid:myId, name:nick(), bot:false})); }
+  write(tid, d, true);
+}
+
+/* ---------- house players, run by the first human at the table ---------- */
+function later(id, ms, fn){ if (scheduled.has(id)) return; scheduled.add(id); setTimeout(() => { scheduled.delete(id); fn(); }, ms); }
+function runBots(me){
+  if (!me) return; const tid = me.tid, d = docs[tid], st = derive(d);
+  const host = st.seated.find(s => !st.seat(s).bot); if (host !== me.seat) return;
+  const todo = st.phase === 'picking' ? st.pending : st.phase === 'voting' ? st.unvoted : [];
+  todo.filter(s => st.seat(s).bot).forEach((s, i) => later(tid + st.key + st.phase + s, 1000 + i * 700 + Math.random() * 700, () => {
+    const d2 = docs[tid]; if (!d2) return; const s2 = derive(d2);
+    if (s2.key !== st.key || s2.phase !== st.phase || !s2.seat(s).bot) return;
+    if (s2.phase === 'picking'){ const hand = d2.hands[s] || []; if (hand.length) playCard(tid, s, hand[Math.floor(Math.random() * hand.length)]); }
+    else { const opts = s2.played.filter(p => p !== s); if (opts.length) tip(tid, s, opts[Math.floor(Math.random() * opts.length)]); }
+  }));
+}
+
+/* ---------- views ---------- */
+function pos(i){ const a = (-90 + i * 60) * Math.PI / 180; return `--x:${(50 + 36 * Math.cos(a)).toFixed(2)}%;--y:${(50 + 36 * Math.sin(a)).toFixed(2)}%;--rot:${i * 60}deg`; }
+function lobbyView(){
+  const off = mode === 'connecting' ? ' disabled' : '';
+  const tables = TABLES.map(t => {
+    const d = docs[t.id], st = d ? derive(d) : null;
+    const chairs = SEATS.map((s, i) => {
+      const p = st ? st.seat(s) : EMPTY;
+      if (p.uid) return `<div class="chair ${p.bot ? 'bot' : 'taken'}" style="${pos(i)}" title="${esc(p.name)}"><span>${esc(p.name)}</span></div>`;
+      return `<button class="chair" style="${pos(i)}" data-act="sit" data-t="${t.id}" data-s="${s}" aria-label="Sit at the ${t.name}, chair ${i + 1}"${off}><span>Sit</span></button>`;
+    }).join('');
+    const n = st ? st.seated.length : 0, humans = st ? st.seated.filter(s => !st.seat(s).bot).length : 0;
+    const stat = !n ? 'Open' : (d.round ? 'Round ' + d.round + ' of ' + ROUNDS : 'Gathering');
+    const clear = n && (!humans || n === 6) ? `<button class="link" data-act="clear" data-t="${t.id}">${confirming === 'clear' + t.id ? 'Tap again to clear it' : 'Clear this table'}</button>` : '';
+    return `<div class="spot"><div class="tbl">${chairs}<div class="top"><span class="tname">${t.name}</span><span class="tstat">${stat}</span></div></div>
+      <small>${n ? n + ' of 6 chairs taken' : 'Nobody here yet'}</small>${clear}</div>`;
+  }).join('');
+  return `<div class="side"><h2>Pick a chair</h2><div class="room">${tables}</div>
+    <div class="box"><span class="lbl">How a round goes</span><ol class="rules">
+      <li>An order comes in for the whole table, such as "a strange thing to be afraid of."</li>
+      <li>Everyone serves one card from their hand, face down. Nobody sits out.</li>
+      <li>The cards are flipped and everyone tips their favorite. You can't tip your own.</li>
+      <li>Each tip you receive is a point. If you tipped the card that got the most, you earn a bonus point for good taste.</li>
+    </ol><p class="hint">Most tips after ${ROUNDS} rounds wins. Playing alone? Sit down, then tap empty chairs to fill them with house players.</p></div>
+    ${HOSTED && mode === 'local' ? `<div class="box"><span class="lbl">Play with friends</span>
+      <p>Paste your Apps Script web app URL to open one shared room, then send friends the invite link.</p>
+      <div class="row"><input id="roomurl" class="wide" placeholder="https://script.google.com/macros/s/.../exec" aria-label="Apps Script web app URL"><button class="btn" data-act="connect">Open shared room</button></div>
+      <p class="hint" id="roomerr" role="alert"></p></div>` : ''}</div>`;
+}
+function tableView(me){
+  const tid = me.tid, d = docs[tid], st = derive(d), t = TABLES.find(x => x.id === tid);
+  if (selKey !== st.key + st.phase){ sel = null; selKey = st.key + st.phase; }
+  const name = s => s === me.seat ? 'You' : (st.seat(s).name || 'Empty chair');
+  const list = arr => arr.map(name).join(', ');
+  const chairs = SEATS.map((s, i) => {
+    const p = st.seat(s);
+    const flag = !d.round || !p.uid ? '' : !st.roster.includes(s) ? 'Next round' : st.phase === 'picking' && st.subs[s] ? 'Served' : st.phase === 'voting' && st.votes[s] ? 'Tipped' : '';
+    const inner = `${esc(p.name)}<span class="pts">${plural(st.scores[p.uid] || 0, 'tip')}</span>${flag ? `<span class="tag">${flag}</span>` : ''}`;
+    if (!p.uid) return `<button class="chair" style="${pos(i)}" data-act="bot" data-s="${s}" aria-label="Seat a house player in chair ${i + 1}"><span>+ house player</span></button>`;
+    if (p.bot) return `<button class="chair bot" style="${pos(i)}" data-act="unbot" data-s="${s}" aria-label="Send house player ${esc(p.name)} home"><span>${inner}</span></button>`;
+    return `<div class="chair ${s === me.seat ? 'me' : 'taken'}" style="${pos(i)}"><span>${inner}</span></div>`;
+  }).join('');
+  const center = `<span class="tname">${t.name}</span><span class="tstat">${d.round ? 'Round ' + d.round + ' of ' + ROUNDS : 'No orders yet'}</span>`;
+  const face = (s, extra) => `<span>${esc(THINGS[st.subs[s].c])}</span>${extra ? `<span class="by">${extra}</span>` : ''}`;
+  const inRound = st.roster.includes(me.seat), mine = st.subs[me.seat], voted = st.votes[me.seat];
+  const ticket = d.round ? `<div class="order"><span class="lbl">The order</span><strong>${esc(st.order)}</strong></div>` : '';
+  let body = '';
+  if (st.phase === 'lobby'){
+    const need = MIN_SEATED - st.seated.length;
+    body = `<p class="say">${need > 0 ? `${need} more ${need === 1 ? 'chair' : 'chairs'} to fill before the first order.` : 'Everyone ready? Call the first order when you are.'}</p>
+      <p class="hint">Tap an empty chair to seat a house player. Tap a house player to send them home.</p>
+      <button class="btn" data-act="next"${need > 0 ? ' disabled' : ''}>Call the first order</button>`;
+  } else if (st.phase === 'stalled'){
+    const ok = st.seated.length >= MIN_SEATED;
+    body = `<p class="say">${ok ? 'Too many players left mid-round to finish this order.' : 'This table needs at least three players to keep going.'}</p>
+      <button class="btn" data-act="next"${ok ? '' : ' disabled'}>Call the next order</button>`;
+  } else if (st.phase === 'picking'){
+    const downs = st.played.map(() => '<div class="card down" aria-hidden="true"></div>').join('');
+    const lead = !inRound ? 'You sat down mid-round. You are in on the next order.' : mine ? 'Your card is served.' : 'Serve the card from your hand that answers this best.';
+    body = `<p class="say">${lead}</p><p class="hint">Still choosing: ${esc(list(st.pending))}</p>${downs ? `<div class="cards">${downs}</div>` : ''}`;
+  } else if (st.phase === 'voting'){
+    const can = inRound && !voted;
+    const cards = st.played.map(s => s === me.seat ? `<div class="card own">${face(s, 'Yours')}</div>`
+      : can ? `<button class="card${sel === s ? ' sel' : ''}" data-act="selseat" data-s="${s}">${face(s)}</button>` : `<div class="card">${face(s)}</div>`).join('');
+    body = `<p class="say">${can ? 'Tip your favorite. Nobody knows whose card is whose.' : inRound ? 'Your tip is in.' : 'The table is tipping.'}</p>
+      <p class="hint">Still deciding: ${esc(list(st.unvoted))}</p><div class="cards">${cards}</div>
+      ${can ? `<button class="btn" data-act="tip"${sel ? '' : ' disabled'}>Leave your tip</button>` : ''}`;
+  } else {
+    const t2 = tally(d, st.key), who = s => st.subs[s].pid === myId ? 'You' : st.subs[s].name;
+    const cards = st.played.map(s => `<div class="card${t2.top.includes(s) ? ' won' : ''}">${face(s, esc(who(s)) + ' · ' + plural(t2.tips[s] || 0, 'tip'))}</div>`).join('');
+    const tops = t2.top.map(who), sharp = t2.sharp.map(s => t2.votes[s].pid === myId ? 'You' : (st.names[t2.votes[s].pid] || name(s)));
+    let say = `${esc(tops.join(' and '))} ${tops.length === 1 && tops[0] !== 'You' ? 'takes' : 'take'} the round.`;
+    let standings = '';
+    if (st.over){
+      const rows = Object.keys(st.scores).sort((a, b) => st.scores[b] - st.scores[a]);
+      const best = st.scores[rows[0]], champs = rows.filter(p => st.scores[p] === best).map(p => p === myId ? 'You' : st.names[p] || 'Someone');
+      say = `${esc(champs.join(' and '))} ${champs.length === 1 && champs[0] !== 'You' ? 'wins' : 'win'} the game with ${plural(best, 'tip')}.`;
+      standings = `<span class="lbl">Final tab</span><ol class="rules">${rows.map(p => `<li>${esc(p === myId ? 'You' : st.names[p] || 'Someone')}: ${plural(st.scores[p], 'tip')}</li>`).join('')}</ol>`;
+    }
+    body = `<p class="say">${say}</p>${sharp.length ? `<p class="hint">Good taste bonus, one extra tip each: ${esc(sharp.join(', '))}</p>` : ''}<div class="cards">${cards}</div>${standings}
+      <button class="btn" data-act="${st.over ? 'newgame' : 'next'}">${st.over ? 'Start a new game' : 'Call the next order'}</button>`;
+  }
+  const canPlay = st.phase === 'picking' && inRound && !mine;
+  const hand = (d.hands[me.seat] || []).map(c => canPlay
+    ? `<button class="card${sel === c ? ' sel' : ''}" data-act="selcard" data-c="${c}"><span>${esc(THINGS[c])}</span></button>`
+    : `<div class="card"><span>${esc(THINGS[c])}</span></div>`).join('');
+  return `<div class="play"><div class="tbl">${chairs}<div class="top">${center}</div></div>
+    <div class="side">
+      <div class="box">${ticket}${body}</div>
+      <div class="box"><span class="lbl">Your hand</span><div class="cards">${hand}</div>
+        ${canPlay ? `<button class="btn" data-act="play"${sel != null ? '' : ' disabled'}>Serve this card</button>` : ''}</div>
+      <div class="row"><button class="link" data-act="leave">Leave the table</button>
+        <button class="link" data-act="reset">${confirming === 'reset' ? 'Tap again to reset tips and seats' : 'Reset this table'}</button></div>
+    </div></div>`;
+}
+function render(){
+  const chip = $('chip');
+  chip.innerHTML = mode === 'connecting' ? 'Opening the room…' : mode === 'live' ? (gasUrl ? (netErr ? '<b>Connection trouble.</b> Retrying…' : '<b>Live room.</b> Friends with the invite link see these same tables. <button class="link" id="copy">Copy invite link</button>') : '<b>Live room.</b> Chairs and cards update for everyone here.') : '<b>Practice room.</b> ' + esc(localWhy || 'Everything stays on this device.');
+  const me = findMe();
+  $('app').innerHTML = me ? tableView(me) : lobbyView();
+  runBots(me);
+}
+function twoStep(tag, fn){
+  if (confirming === tag){ confirming = ''; fn(); return; }
+  confirming = tag; render(); setTimeout(() => { if (confirming === tag){ confirming = ''; render(); } }, 3500);
+}
+$('app').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const a = b.dataset.act, s = b.dataset.s, me = findMe();
+  if (a === 'connect'){
+    const u = $('roomurl').value.trim();
+    if (!ROOM_RE.test(u)){ $('roomerr').textContent = 'That does not look like a web app URL. It starts with https://script.google.com/macros/s/ and ends with /exec.'; return; }
+    lsSet('ftb-room', u); location.href = location.pathname + '?room=' + encodeURIComponent(u); return;
+  }
+  if (a === 'sit'){ if (!me) sit(b.dataset.t, s); return; }
+  if (a === 'clear') return twoStep('clear' + b.dataset.t, () => resetTable(b.dataset.t, false));
+  if (!me) return;
+  const tid = me.tid;
+  if (a === 'bot') addBot(tid, s);
+  else if (a === 'unbot') stand(tid, s);
+  else if (a === 'next') nextRound(tid);
+  else if (a === 'newgame') write(tid, Object.assign({}, docs[tid], {game: docs[tid].game + 1, round: 0, subs: {}, votes: {}, rosters: {}}), true);
+  else if (a === 'selcard'){ sel = Number(b.dataset.c); render(); }
+  else if (a === 'selseat'){ sel = s; render(); }
+  else if (a === 'play' && sel != null){ const c = sel; sel = null; playCard(tid, me.seat, c); }
+  else if (a === 'tip' && sel){ const w = sel; sel = null; tip(tid, me.seat, w); }
+  else if (a === 'leave') stand(tid, me.seat);
+  else if (a === 'reset') twoStep('reset', () => resetTable(tid, true));
+});
+$('chip').addEventListener('click', e => {
+  if (e.target.id !== 'copy') return; const link = inviteLink(), b = e.target;
+  const show = () => { b.replaceWith(document.createTextNode(link)); };
+  try { navigator.clipboard.writeText(link).then(() => { b.textContent = 'Copied'; }, show); } catch (err) { show(); }
+});
+$('nick').value = lsGet('ftb-nick') || '';
+$('nick').addEventListener('input', () => lsSet('ftb-nick', $('nick').value));
+
+async function boot(){
+  render();
+  const c = window.claude;
+  if (HOSTED){
+    let u = ROOM_URL; try { u = u || new URLSearchParams(location.search).get('room') || lsGet('ftb-room') || ''; } catch (e) {}
+    if (!ROOM_RE.test(u)){ goLocal(); return; }
+    gasUrl = u;
+    try { const r = await gas(); mode = 'live'; lsSet('ftb-room', u); applyTables(r.tables); render(); poll(); }
+    catch (e){ goLocal('Could not reach the shared room, so this is a practice room on your device.'); }
+    return;
+  }
+  const timer = setTimeout(() => { if (mode === 'connecting') goLocal(); }, 5000);
+  let store = null, user = null;
+  try { [store, user] = await Promise.all([c.use('db'), c.use('user')]); } catch (e) {}
+  if (mode !== 'connecting') return;
+  if (user){
+    const id = await user.id(); if (id) myId = id;
+    if ((await user.can('data.write')) === false){ clearTimeout(timer); goLocal('You have view-only access here, so this is a practice room on your device.'); return; }
+  }
+  if (mode !== 'connecting') return;
+  if (!store){ clearTimeout(timer); goLocal(); return; }
+  db = store;
+  unsub = db.collection('tables').onSnapshot(snap => {
+    if (mode === 'local') return;
+    const next = {}; snap.docs.forEach(x => { next[x.id] = x.data(); });
+    TABLES.forEach(t => { docs[t.id] = next[t.id] || null; });
+    if (mode === 'connecting'){ mode = 'live'; clearTimeout(timer); }
+    render();
+  }, () => goLocal('The shared room dropped, so this is a practice room on your device.'));
+}
+boot();
+</script>
+</body>
+</html>
